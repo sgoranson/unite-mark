@@ -46,7 +46,7 @@ endfunction
 
 function! s:collect_mark_info(marks)
   let l:curr_buf_name = bufname('%')
-  let l:mark_info_list = [] 
+  let l:mark_info_list = []
   for l:mark in a:marks
     let l:mark_info = s:get_mark_info(l:mark, l:curr_buf_name)
     if !empty(l:mark_info)
@@ -63,13 +63,13 @@ function! s:get_mark_info(mark, curr_buf_name)
     return {}
   endif
   if l:pos[0] == 0
-    let l:buf_name = '%'
-    let l:path = a:curr_buf_name
+    let l:buf_name = bufname("%")
+    let l:path = fnamemodify(l:buf_name, ":t")
     let l:snippet = getline(l:line)
   else
     let l:buf_name = bufname(l:pos[0])
-    let l:path = l:buf_name
-    let l:snippet = ''
+    let l:path = fnamemodify(l:buf_name, ":t")
+    let l:snippet = join(getbufline(l:pos[0], l:line))
   endif
   let l:mark_info = {
         \   'mark': a:mark,
@@ -77,7 +77,7 @@ function! s:get_mark_info(mark, curr_buf_name)
         \   'path': l:path,
         \   'line': l:line,
         \   'snippet': l:snippet,
-        \ } 
+        \ }
   return l:mark_info
 endfunction
 
