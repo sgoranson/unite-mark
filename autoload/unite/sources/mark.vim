@@ -2,13 +2,11 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 if !exists('g:unite_source_mark_marks')
-    let g:unite_source_mark_marks = "abcdefghijklmnopqrstuvwxyz"
+    "let g:unite_source_mark_marks = "abcdefghijklmnopqrstuvwxyz"
 
     " or all marks?
-    " let g:unite_source_mark_marks =
-    " \   "abcdefghijklmnopqrstuvwxyz"
-    " \ . "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    " \ . "0123456789.'`^<>[]{}()\""
+    let g:unite_source_mark_marks =
+     \   "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 endif
 
 function! s:str2list(str)
