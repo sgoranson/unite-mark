@@ -2,9 +2,6 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 if !exists('g:unite_source_mark_marks')
-    "let g:unite_source_mark_marks = "abcdefghijklmnopqrstuvwxyz"
-
-    " or all marks?
     let g:unite_source_mark_marks =
      \   "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 endif
@@ -43,10 +40,9 @@ function! s:source_mark.gather_candidates(args, context)
 endfunction
 
 function! s:collect_mark_info(marks)
-    let l:curr_buf_name = bufname('%')
     let l:mark_info_list = []
     for l:mark in a:marks
-        let l:mark_info = s:get_mark_info(l:mark, l:curr_buf_name)
+        let l:mark_info = s:get_mark_info(l:mark)
         if !empty(l:mark_info)
             call add(l:mark_info_list, l:mark_info)
         endif
@@ -54,13 +50,13 @@ function! s:collect_mark_info(marks)
     return l:mark_info_list
 endfunction
 
-function! s:get_mark_info(mark, curr_buf_name)
+function! s:get_mark_info(mark)
     let l:pos = getpos("'" . a:mark)
     let l:line = l:pos[1]
     if l:line == 0 " mark does not exist
         return {}
     endif
-    let l:buf_nr = l:pos[0]
+    let l:buf_nr = (l:pos[0] == 0 ? bufnr('%') : l:pos[0])
     let l:buf_name = bufname(l:buf_nr)
     let l:path = fnamemodify(l:buf_name, ":p")
     let l:snippet = join(getbufline(l:buf_nr, l:line))
