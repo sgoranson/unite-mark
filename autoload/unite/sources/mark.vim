@@ -10,34 +10,60 @@ function! s:str2list(str)
     return split(a:str, '\zs')
 endfunction
 
-let s:marks = s:str2list(g:unite_source_mark_marks)
 let s:mark_info_list = []
 
 let s:source_mark = {
-            \   'name': 'mark',
-            \   'hooks': {},
-            \ }
+\   'name': 'mark',
+\   'hooks': {},
+\   'action_table': {},
+\ }
 
 function! s:source_mark.hooks.on_init(args, context)
-    if empty(a:args)
-        let l:marks = s:marks
-    else
-        let l:marks = s:str2list(a:args[0])
-    endif
-    let s:mark_info_list = s:collect_mark_info(l:marks)
+  if empty(a:args)
+    let s:marks = s:str2list(g:unite_source_mark_marks)
+  else
+    let s:marks = s:str2list(a:args[0])
+  endif
+  let s:marks_bufnr = bufnr('%')
+  let s:mark_info_list = s:collect_mark_info(s:marks)
 endfunction
 
 function! s:source_mark.gather_candidates(args, context)
-    return map(s:mark_info_list, '{
-                \   "word": v:val.mark . v:val.buf_name . v:val.snippet,
-                \   "abbr": printf("%s: %s [%4d] %s",
-                \                  v:val.mark, v:val.buf_name, v:val.line, v:val.snippet),
-                \   "source": "mark",
-                \   "kind": "jump_list",
-                \   "action__buffer_nr": v:val.buf_nr,
-                \   "action__line": v:val.line,
-                \ }')
+  return map(copy(s:mark_info_list), '{
+        \   "word": v:val.mark . ":" . v:val.buf_name . ":" . v:val.line,
+        \   "abbr": printf("%s: %s [%4d] %s",
+        \                  v:val.mark, v:val.buf_name, v:val.line, v:val.snippet),
+        \   "source": "mark",
+        \   "kind": "jump_list",
+        \   "action__path": v:val.path,
+        \   "action__line": v:val.line,
+        \   "action__mark": v:val.mark,
+        \   "action__bufnr": v:val.bufnr,
+        \ }')
 endfunction
+
+let s:source_mark.action_table.delete = {
+      \ 'description' : 'delete from mark list',
+      \ 'is_invalidate_cache' : 1,
+      \ 'is_quit' : 0,
+      \ 'is_selectable' : 1,
+      \ }
+function! s:source_mark.action_table.delete.func(candidates) "{{{
+  let unite_bufnr = bufnr('%')
+  for candidate in a:candidates
+    if candidate.action__mark =~ '\a'
+      execute "buffer! " . candidate.action__bufnr
+      execute "delmark " . candidate.action__mark
+    else
+      echoerr "Special marks can't be deleted! :" . candidate.action__mark
+    endif
+  endfor
+  " restore original bufnr so that gathering marks will be based on that buffer
+  execute "buffer! " . s:marks_bufnr
+  let s:mark_info_list = s:collect_mark_info(s:marks)
+  " restore unite buffer
+  execute "buffer! " . unite_bufnr
+endfunction"}}}
 
 function! s:collect_mark_info(marks)
     let l:mark_info_list = []
@@ -50,25 +76,32 @@ function! s:collect_mark_info(marks)
     return l:mark_info_list
 endfunction
 
-function! s:get_mark_info(mark)
-    let l:pos = getpos("'" . a:mark)
-    let l:line = l:pos[1]
-    if l:line == 0 " mark does not exist
-        return {}
-    endif
-    let l:buf_nr = (l:pos[0] == 0 ? bufnr('%') : l:pos[0])
-    let l:buf_name = bufname(l:buf_nr)
-    let l:path = fnamemodify(l:buf_name, ":p")
-    let l:snippet = join(getbufline(l:buf_nr, l:line))
-    let l:mark_info = {
-                \   'mark': a:mark,
-                \   'buf_name': l:buf_name,
-                \   'buf_nr': l:buf_nr,
-                \   'path': l:path,
-                \   'line': l:line,
-                \   'snippet': l:snippet,
-                \ }
-    return l:mark_info
+function! s:get_mark_info(mark, curr_buf_name)
+  let l:pos = getpos("'" . a:mark)
+  let l:line = l:pos[1]
+  if l:line == 0 " mark does not exist
+    return {}
+  endif
+  if l:pos[0] == 0
+    let l:buf_name = '%'
+    let l:path = a:curr_buf_name
+    let l:snippet = getline(l:line)
+    let l:bufnr = bufnr('%')
+  else
+    let l:buf_name = bufname(l:pos[0])
+    let l:path = l:buf_name
+    let l:snippet = ''
+    let l:bufnr = l:pos[0]
+  endif
+  let l:mark_info = {
+        \   'mark': a:mark,
+        \   'buf_name': l:buf_name,
+        \   'bufnr' : l:bufnr,
+        \   'path': l:path,
+        \   'line': l:line,
+        \   'snippet': l:snippet,
+        \ }
+  return l:mark_info
 endfunction
 
 function! unite#sources#mark#define()
