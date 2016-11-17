@@ -66,14 +66,15 @@ function! s:source_mark.action_table.delete.func(candidates) "{{{
 endfunction"}}}
 
 function! s:collect_mark_info(marks)
-    let l:mark_info_list = []
-    for l:mark in a:marks
-        let l:mark_info = s:get_mark_info(l:mark)
-        if !empty(l:mark_info)
-            call add(l:mark_info_list, l:mark_info)
-        endif
-    endfor
-    return l:mark_info_list
+   let l:curr_buf_name = bufname('%')
+   let l:mark_info_list = []
+   for l:mark in a:marks
+     let l:mark_info = s:get_mark_info(l:mark, l:curr_buf_name)
+     if !empty(l:mark_info)
+       call add(l:mark_info_list, l:mark_info)
+     endif
+   endfor
+   return l:mark_info_list
 endfunction
 
 function! s:get_mark_info(mark, curr_buf_name)
